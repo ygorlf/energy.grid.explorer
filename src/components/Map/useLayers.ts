@@ -35,17 +35,22 @@ export function addGridLayers(map: maplibregl.Map) {
     data: '/data/transmission_lines.geojson',
   });
 
-  // Substations source — loaded from static file in /public/data/
+  // Substations source with clustering — MapLibre groups nearby points at low zoom levels,
+  // expanding into individual markers as the user zooms in (pure frontend, no backend needed)
   map.addSource('substations', {
     type: 'geojson',
     data: '/data/substations.geojson',
+    cluster: true,
+    clusterMaxZoom: 7,  // stop clustering above zoom 7
+    clusterRadius: 40,  // px radius to merge points into a cluster
   });
 
-  // 380kV+ lines (380, 400, 420, 500, 750 kV)
+  // 380kV+ lines — visible from zoom 3 (continent scale, backbone grid)
   map.addLayer({
     id: 'lines-380kv',
     type: 'line',
     source: 'transmission-lines',
+    minzoom: 3,
     filter: ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 380],
     paint: {
       'line-color': '#f97316',
@@ -54,11 +59,12 @@ export function addGridLayers(map: maplibregl.Map) {
     },
   });
 
-  // 220kV–379kV lines (220, 225, 275, 330 kV)
+  // 220kV–379kV lines — visible from zoom 5 (country scale)
   map.addLayer({
     id: 'lines-220kv',
     type: 'line',
     source: 'transmission-lines',
+    minzoom: 5,
     filter: ['all',
       ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 220],
       ['<', ['coalesce', ['get', 'voltage_kv'], 0], 380],
@@ -70,11 +76,12 @@ export function addGridLayers(map: maplibregl.Map) {
     },
   });
 
-  // 110kV–219kV lines (110, 132, 150 kV)
+  // 110kV–219kV lines — visible from zoom 7 (regional scale, most dense layer)
   map.addLayer({
     id: 'lines-110kv',
     type: 'line',
     source: 'transmission-lines',
+    minzoom: 7,
     filter: ['all',
       ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 110],
       ['<', ['coalesce', ['get', 'voltage_kv'], 0], 220],
@@ -86,13 +93,47 @@ export function addGridLayers(map: maplibregl.Map) {
     },
   });
 
+  // Cluster bubble — shown when points are grouped at low zoom
+  map.addLayer({
+    id: 'substations-clusters',
+    type: 'circle',
+    source: 'substations',
+    filter: ['has', 'point_count'],
+    paint: {
+      'circle-color': '#334155',
+      'circle-radius': ['step', ['get', 'point_count'], 14, 50, 20, 200, 26],
+      'circle-stroke-color': '#94a3b8',
+      'circle-stroke-width': 1.5,
+      'circle-opacity': 0.85,
+    },
+  });
+
+  // Cluster count label
+  map.addLayer({
+    id: 'substations-cluster-count',
+    type: 'symbol',
+    source: 'substations',
+    filter: ['has', 'point_count'],
+    layout: {
+      'text-field': '{point_count_abbreviated}',
+      'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+      'text-size': 11,
+    },
+    paint: {
+      'text-color': '#f1f5f9',
+    },
+  });
+
   // Substation circles — range-based so 400kV shows orange, 132kV shows green, etc.
-  // Filter: only show HV substations (voltage_kv >= 110); hides null/zero/distribution-level entries
+  // Filter: only show HV substations (voltage_kv >= 110) that are NOT part of a cluster
   map.addLayer({
     id: 'substations-circles',
     type: 'circle',
     source: 'substations',
-    filter: ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 110],
+    filter: ['all',
+      ['!', ['has', 'point_count']],
+      ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 110],
+    ],
     paint: {
       'circle-radius': [
         'step',
@@ -116,12 +157,15 @@ export function addGridLayers(map: maplibregl.Map) {
     },
   });
 
-  // Substation labels (hidden by default) — same HV filter as circles
+  // Substation labels (hidden by default) — only on unclustered HV points
   map.addLayer({
     id: 'substations-labels',
     type: 'symbol',
     source: 'substations',
-    filter: ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 110],
+    filter: ['all',
+      ['!', ['has', 'point_count']],
+      ['>=', ['coalesce', ['get', 'voltage_kv'], 0], 110],
+    ],
     layout: {
       'text-field': ['get', 'name'],
       'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
@@ -147,7 +191,7 @@ export function updateLayerVisibility(
     lines380kv: ['lines-380kv'],
     lines220kv: ['lines-220kv'],
     lines110kv: ['lines-110kv'],
-    substations: ['substations-circles', 'substations-labels'],
+    substations: ['substations-clusters', 'substations-cluster-count', 'substations-circles', 'substations-labels'],
     drawnFeatures: [],
   };
 
