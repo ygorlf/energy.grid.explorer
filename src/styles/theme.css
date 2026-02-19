@@ -1,0 +1,56 @@
+:root {
+  /* Backgrounds */
+  --color-bg: #0a0e1a;
+  --color-sidebar: #111827;
+  --color-sidebar-border: #1f2937;
+  --color-surface: #1a2235;
+  --color-surface-hover: #1e2a3f;
+
+  /* Text */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  /* Accent */
+  --color-accent: #f97316;
+  --color-accent-hover: #fb923c;
+
+  /* Voltage palette */
+  --color-380kv: #f97316;
+  --color-220kv: #3b82f6;
+  --color-110kv: #22c55e;
+  --color-drawn: #a855f7;
+
+  /* UI */
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+
+  /* Borders */
+  --border-width: 1px;
+  --border-color: var(--color-sidebar-border);
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Sidebar */
+  --sidebar-width: 280px;
+  --toolbar-height: 48px;
+
+  /* Typography */
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+}
